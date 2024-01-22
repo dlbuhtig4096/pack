@@ -2,7 +2,6 @@
 #ifndef __ENV__
 #define __ENV__
 
-
 #include <stdint.h>
 
 typedef int8_t s8;
