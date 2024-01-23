@@ -17,10 +17,10 @@ lz.c
 // #define LZ_MODULE
 
 // 如果邊界檢查出錯的話 印出錯誤訊息到 console
-#define LOG_ERROR
+#define LZ_ERROR
 
 // 印出壓縮和解壓縮進程中除錯資訊 只用於開發本軟體庫
-// #define LOG_DEBUG
+// #define LZ_DEBUG
 
 /*
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -28,45 +28,41 @@ lz.c
 
 #include <env.h>
 
-#if defined(LZ_MODULE) || defined(LOG_ERROR) || defined(LOG_DEBUG)
+#if defined(LZ_MODULE) || defined(LZ_ERROR) || defined(LZ_DEBUG)
 #include <stdlib.h>
 #include <stdio.h>
-#endif // defined(LOG_ERROR) || defined(LOG_DEBUG)
+#endif // defined(LZ_ERROR) || defined(LZ_DEBUG)
 
 #if !defined(LZ_MODULE)
 #include <memory.h>
 #endif // !defined(LZ_MODULE)
 
-
-#define bswap16 __builtin_bswap16
-#define bswap32 __builtin_bswap32
-#define bswap64 __builtin_bswap64
-#define clz32   __builtin_clz
-#define clz64   __builtin_clzll
-#define clz  __builtin_clzll
-
-// lz_win_size = (0x1 << lz_win_bits)
-// lz_win_mask = (lz_win_size - 0x1)
-#define lz_win_bits 0x000A
-#define lz_win_size 0x0400
-#define lz_win_mask 0x03FF
-#define lz_ref_init 0x03BE
-#define lz_cache_page 0x0010
-#define lz_cache_mask 0x000F
-#define lz_cache_addr 0x0004
-#define lz_cache_size 0x0420
-
-#ifdef LOG_ERROR
-#define log_error(...)  printf(__VA_ARGS__); fflush(stdout);
+#ifdef LZ_ERROR
+#define lz_error(...)  printf(__VA_ARGS__); fflush(stdout);
 #else
-#define log_error(...)
-#endif // LOG_ERROR
+#define lz_error(...)
+#endif // LZ_ERROR
 
-#ifdef LOG_DEBUG
-#define log_debug(...)  printf(__VA_ARGS__); fflush(stdout);
+#ifdef LZ_DEBUG
+#define lz_debug(...)  printf(__VA_ARGS__); fflush(stdout);
 #else
-#define log_debug(...)
-#endif // LOG_ERROR
+#define lz_debug(...)
+#endif // LZ_ERROR
+
+// lz_win_size = 0x1u << lz_win_bits
+// lz_win_mask = lz_win_size - 0x1
+#define lz_win_bits 0x000aull
+#define lz_win_size 0x0400ull
+#define lz_win_mask 0x03ffull
+#define lz_ref_init 0x03beull
+
+// lz_cache_page = lz_win_size / bitsof(u64) = 0x1u << lz_cache_bits
+// lz_cache_size = lz_cache_page * lz_max_size
+// lz_max_size = 0x3f + 0x3 = 0x42
+#define lz_cache_page 0x0010ull
+#define lz_cache_mask 0x000full
+#define lz_cache_bits 0x0004ull
+#define lz_cache_size 0x0420ull
 
 /*
 lzDecode
@@ -117,7 +113,7 @@ u8* lzDecode(u8 *dst, u8 *src, uptr dcnt, uptr scnt) {
 
 #ifdef LZ_CHECK
             if ((uptr)dst > dcnt) {
-                log_error("lzDecode : [Error] out of dst when writing byte.\n");
+                lz_error("lzDecode : [Error] out of dst when writing byte.\n");
                 return dst;
             }
 #endif // LZ_CHECK
@@ -136,7 +132,7 @@ u8* lzDecode(u8 *dst, u8 *src, uptr dcnt, uptr scnt) {
 
             // 原始壓縮工具生成的檔案 可能會在這裡結束
             if ((uptr)src >= scnt) {
-                log_debug("lzDecode : [Debug] out of src when reading reference.\n");
+                lz_debug("lzDecode : [Debug] out of src when reading reference.\n");
                 return dst;
             }
 
@@ -153,11 +149,11 @@ u8* lzDecode(u8 *dst, u8 *src, uptr dcnt, uptr scnt) {
                 ref_off = lz_win_size;
             }
 
-            log_debug("ref : 0x%llX, 0x%llX, 0x%llX [0x%llX]\n", ref_len, ref_off, ref_ctr, dst[-ref_off]);
+            lz_debug("ref : 0x%llX, 0x%llX, 0x%llX [0x%llX]\n", ref_len, ref_off, ref_ctr, dst[-ref_off]);
 
 #ifdef LZ_CHECK
             if ((uptr)&dst[ref_len] > dcnt) {
-                log_error("lzDecode : [Error] out of dst when writing reference.\n");
+                lz_error("lzDecode : [Error] out of dst when writing reference.\n");
                 return dst;
             }
 #endif // LZ_CHECK
@@ -233,7 +229,7 @@ __lzEncode_main_refill_step1:
                 // 讀取 1 byte
                 c = *src;
                 p = &src[-lz_win_size];
-                log_debug("refill step1 : r = 0x%llX, w = 0x%llX, 0x%llX\n", ref_cache_read, ref_cache_write, ref_cache);
+                lz_debug("refill step1 : r = 0x%llX, w = 0x%llX, 0x%llX\n", ref_cache_read, ref_cache_write, ref_cache);
 
                 // 更新 cache
                 do {
@@ -246,7 +242,7 @@ __lzEncode_main_refill_step1:
                 
                 // 如果 src 用完了 就跳到最後的一次處理
                 if ((uptr)src >= scnt) {
-                    log_debug("0x%llX, 0x%llX, 0x%llX\n", ref_cache_write, src, scnt);
+                    lz_debug("0x%llX, 0x%llX, 0x%llX\n", ref_cache_write, src, scnt);
 
                     // 將 src 回朔到原本的指針
                     src = src_ref;
@@ -274,7 +270,7 @@ __lzEncode_main_refill_step2:
                 // 讀取 1 byte
                 c = *src;
                 p = &src[-lz_win_size];
-                log_debug("refill step2 : r = 0x%llX, w = 0x%llX, 0x%llX\n", ref_cache_read, ref_cache_write, ref_cache);
+                lz_debug("refill step2 : r = 0x%llX, w = 0x%llX, 0x%llX\n", ref_cache_read, ref_cache_write, ref_cache);
 
                 // 更新 cache
                 do {
@@ -287,7 +283,7 @@ __lzEncode_main_refill_step2:
                 
                 // 如果 src 用完了 就跳到最後的一次處理
                 if ((uptr)src >= scnt) {
-                    log_debug("0x%llX, 0x%llX, 0x%llX\n", ref_cache_write, src, scnt);
+                    lz_debug("0x%llX, 0x%llX, 0x%llX\n", ref_cache_write, src, scnt);
 
                     // 將 src 回朔到原本的指針
                     src = src_ref;
@@ -304,7 +300,7 @@ __lzEncode_main_refill_finish:
             src_ref = (u8*)((uptr)src ^ (uptr)src_ref);
             src = (u8*)((uptr)src ^ (uptr)src_ref);
         }
-        log_debug("refill_finish : r = 0x%llX, s = 0x%llX / 0x%llX\n", ref_cache_read, src, scnt);
+        lz_debug("refill_finish : r = 0x%llX, s = 0x%llX / 0x%llX\n", ref_cache_read, src, scnt);
         
 __lzEncode_main_scan:
         // 從 cache 中找出最長的連續 1
@@ -368,7 +364,7 @@ __lzEncode_main_scan_sub:
                     goto __lzEncode_main_scan_sub_next;
                 }
                 
-                // log_debug("scan continue : %02X, f = 0x%llX, t = 0x%llX, w = 0x%llX\n", scan_size, scan_flag, ref_cache_scan, ref_cache_write);
+                // lz_debug("scan continue : %02X, f = 0x%llX, t = 0x%llX, w = 0x%llX\n", scan_size, scan_flag, ref_cache_scan, ref_cache_write);
 
                 // 繼續掃描
                 do {
@@ -410,12 +406,12 @@ __lzEncode_main_scan_sub_next:
                         ref_size = scan_size;
                         ref_offset = (scan_slot << 0x3) | clz64(scan_flag);
 
-                        log_debug("scan update : 0x%llX, 0x%llX, 0x%llX\n", ref_size, ref_offset, scan_flag);
+                        lz_debug("scan update : 0x%llX, 0x%llX, 0x%llX\n", ref_size, ref_offset, scan_flag);
                     }
 
                     // 把掃描端移回原本的 page
                     ref_cache_scan = (u64*)((uptr)ref_cache_read + scan_slot);
-                    // log_debug("scan next : %02X, f = 0x%llX, t = 0x%llX, w = 0x%llX\n", scan_size, scan_flag, ref_cache_scan, ref_cache_write);
+                    // lz_debug("scan next : %02X, f = 0x%llX, t = 0x%llX, w = 0x%llX\n", scan_size, scan_flag, ref_cache_scan, ref_cache_write);
                 }
 
             } while (ref_cache_scan > ref_cache_read);
@@ -427,18 +423,18 @@ __lzEncode_main_scan_finish:
                 // 參照模式
 #ifdef LZ_CHECK
                 if ((uptr)&dst[0x1] >= dcnt) {
-                    log_error("lzEncode : out of dst when writing reference.\n\n");
+                    lz_error("lzEncode : out of dst when writing reference.\n\n");
                     return dst;
                 }
 #endif // LZ_CHECK
 
-                log_debug("record : ");
-#if LOG_DEBUG
+                lz_debug("record : ");
+#if LZ_DEBUG
                 for (uptr i = 0x0; i < ref_size + 0x3; i++) {
-                    log_debug("%02X", src[i]);
+                    lz_debug("%02X", src[i]);
                 }
-                log_debug("\n0x%llX, 0x%llX, 0x%llX\n", ref_size, ref_offset, ref_ctr);
-#endif // LOG_DEBUG
+                lz_debug("\n0x%llX, 0x%llX, 0x%llX\n", ref_size, ref_offset, ref_ctr);
+#endif // LZ_DEBUG
 
                 // 在計算 ref_offset 的時候實際上值是
                 //   (ref_ctr + lz_win_mask - ref_offset) & lz_win_mask = (ref_ctr - 0x1 - ref_offset) & lz_win_mask
@@ -449,7 +445,7 @@ __lzEncode_main_scan_finish:
                 
                 // 同時更新 src
                 ref_size = ref_size + 0x2;
-                ref_cache_read -= ref_size << lz_cache_addr;
+                ref_cache_read -= ref_size << lz_cache_bits;
                 ref_ctr += ref_size;
                 src += ref_size;
                 dst++;
@@ -459,12 +455,12 @@ __lzEncode_main_scan_finish:
 
 #ifdef LZ_CHECK
                 if ((uptr)dst >= dcnt) {
-                    log_error("lzEncode : out of dst when writing byte.\n\n");
+                    lz_error("lzEncode : out of dst when writing byte.\n\n");
                     return dst;
                 }
 #endif // LZ_CHECK
 
-                log_debug("plain : %02X\n", *src);
+                lz_debug("plain : %02X\n", *src);
                 
                 // 現在 src 是指到明文位置
                 *dst = *src;
@@ -479,7 +475,7 @@ __lzEncode_main_scan_finish:
             ref_ctr++;
             src++;
             dst++;
-            log_debug("scan finish : s = 0x%llX / 0x%llX\n", src, scnt);
+            lz_debug("scan finish : s = 0x%llX / 0x%llX\n", src, scnt);
 
             // 如果讀端已經讀到 stack 頂部 則把它重新指回 stack 底部
             // 這個判斷必須放在參照模式寫入之後 因為減完 ref_size 之後 讀端有可能會指到 stack 頂端之上
@@ -496,7 +492,7 @@ __lzEncode_main_scan_finish:
 
 #ifdef LZ_CHECK
             if ((uptr)dst >= dcnt) {
-                log_error("lzEncode : out of dst when writing flag.\n\n");
+                lz_error("lzEncode : out of dst when writing flag.\n\n");
                 return dst;
             }
 #endif // LZ_CHECK
@@ -527,7 +523,7 @@ __lzEncode_cleanup_step1:
     // 除了以下修改外 基本上照抄 main 的部分:
     //   主迴圈不填充 cache
     //   scan_finish 時不判斷寫端是不是在 stack 頂端 
-    log_debug("Cleanup step1 : r = 0x%llX, w = 0x%llX\n", ref_cache_read, ref_cache_write);
+    lz_debug("Cleanup step1 : r = 0x%llX, w = 0x%llX\n", ref_cache_read, ref_cache_write);
     do {
 
         // 不填充 cahce
@@ -637,7 +633,7 @@ __lzEncode_cleanup_step1_scan_sub_next:
 
                     // 把掃描端移回原本的 page
                     ref_cache_scan = (u64*)((uptr)ref_cache_read + scan_slot);
-                    // log_debug("scan sub next : 0x%llX\n", ref_cache_scan);
+                    // lz_debug("scan sub next : 0x%llX\n", ref_cache_scan);
                 }
 
             } while (ref_cache_scan > ref_cache_read);
@@ -649,12 +645,12 @@ __lzEncode_cleanup_step1_scan_finish:
                 // 參照模式
 #ifdef LZ_CHECK
                 if ((uptr)&dst[0x1] >= dcnt) {
-                    log_error("lzEncode : out of dst when writing reference.\n\n");
+                    lz_error("lzEncode : out of dst when writing reference.\n\n");
                     return dst;
                 }
 #endif // LZ_CHECK
 
-                log_debug("scan finish : 0x%llX, 0x%llX, 0x%llX\n", ref_size, ref_offset, ref_ctr);
+                lz_debug("scan finish : 0x%llX, 0x%llX, 0x%llX\n", ref_size, ref_offset, ref_ctr);
 
                 // 在計算 ref_offset 的時候實際上值是
                 //   (ref_ctr + lz_win_mask - ref_offset) & lz_win_mask = (ref_ctr - 0x1 - ref_offset) & lz_win_mask
@@ -665,7 +661,7 @@ __lzEncode_cleanup_step1_scan_finish:
 
                 // 同時更新 src
                 ref_size = ref_size + 0x2;
-                ref_cache_read -= ref_size << lz_cache_addr;
+                ref_cache_read -= ref_size << lz_cache_bits;
                 ref_ctr += ref_size;
                 src += ref_size;
                 dst++;
@@ -674,7 +670,7 @@ __lzEncode_cleanup_step1_scan_finish:
                 // 明文模式
 #ifdef LZ_CHECK
                 if ((uptr)dst >= dcnt) {
-                    log_error("lzEncode : out of dst when writing byte.\n\n");
+                    lz_error("lzEncode : out of dst when writing byte.\n\n");
                     return dst;
                 }
 #endif // LZ_CHECK
@@ -692,7 +688,7 @@ __lzEncode_cleanup_step1_scan_finish:
             ref_ctr++;
             src++;
             dst++;
-            log_debug("scan finish : s = 0x%llX / 0x%llX\n", src, scnt);
+            lz_debug("scan finish : s = 0x%llX / 0x%llX\n", src, scnt);
             
             // 這裡不判斷讀端在不在寫端之下 移動到迴圈結束時判斷
         }
@@ -705,7 +701,7 @@ __lzEncode_cleanup_step1_scan_finish:
 
 #ifdef LZ_CHECK
             if ((uptr)dst >= dcnt) {
-                log_error("lzEncode : out of dst when writing flag.\n\n");
+                lz_error("lzEncode : out of dst when writing flag.\n\n");
                 return dst;
             }
 #endif // LZ_CHECK
@@ -732,7 +728,7 @@ __lzEncode_cleanup_step2:
     // 消耗到寫端為止
     // 除了以下修改外 基本上照抄 step2 的部分:
     //   scan_sub 只有一個迴圈 (因為不可能碰到 stack 頂端)
-    log_debug("Cleanup step2 : r = 0x%llX, w = 0x%llX\n", ref_cache_read, ref_cache_write);
+    lz_debug("Cleanup step2 : r = 0x%llX, w = 0x%llX\n", ref_cache_read, ref_cache_write);
     do {
         // 不填充 cahce
 
@@ -806,7 +802,7 @@ __lzEncode_cleanup_step2_scan_sub_next:
 
                     // 把掃描端移回原本的 page
                     ref_cache_scan = (u64*)((uptr)ref_cache_read + scan_slot);
-                    // log_debug("scan sub next : 0x%llX\n", ref_cache_scan);
+                    // lz_debug("scan sub next : 0x%llX\n", ref_cache_scan);
                 }
 
             } while (ref_cache_scan > ref_cache_read);
@@ -818,12 +814,12 @@ __lzEncode_cleanup_step2_scan_finish:
                 // 參照模式
 #ifdef LZ_CHECK
                 if ((uptr)&dst[0x1] >= dcnt) {
-                    log_error("lzEncode : out of dst when writing reference.\n\n");
+                    lz_error("lzEncode : out of dst when writing reference.\n\n");
                     return dst;
                 }
 #endif // LZ_CHECK
 
-                log_debug("scan finish : 0x%llX, 0x%llX, 0x%llX\n", ref_size, ref_offset, ref_ctr);
+                lz_debug("scan finish : 0x%llX, 0x%llX, 0x%llX\n", ref_size, ref_offset, ref_ctr);
 
                 // 在計算 ref_offset 的時候實際上值是
                 //   (ref_ctr + lz_win_mask - ref_offset) & lz_win_mask = (ref_ctr - 0x1 - ref_offset) & lz_win_mask
@@ -834,7 +830,7 @@ __lzEncode_cleanup_step2_scan_finish:
                 
                 // 同時更新 src
                 ref_size = ref_size + 0x2;
-                ref_cache_read -= ref_size << lz_cache_addr;
+                ref_cache_read -= ref_size << lz_cache_bits;
                 ref_ctr += ref_size;
                 src += ref_size;
                 dst++;
@@ -843,7 +839,7 @@ __lzEncode_cleanup_step2_scan_finish:
                 // 明文模式
 #ifdef LZ_CHECK
                 if ((uptr)dst >= dcnt) {
-                    log_error("lzEncode : out of dst when writing byte.\n\n");
+                    lz_error("lzEncode : out of dst when writing byte.\n\n");
                     return dst;
                 }
 #endif // LZ_CHECK
@@ -861,7 +857,7 @@ __lzEncode_cleanup_step2_scan_finish:
             ref_ctr++;
             src++;
             dst++;
-            log_debug("scan finish : s = 0x%llX / 0x%llX\n", src, scnt);
+            lz_debug("scan finish : s = 0x%llX / 0x%llX\n", src, scnt);
             
             // 這裡不判斷讀端在不在寫端之下 移動到迴圈結束時判斷
         }
@@ -874,7 +870,7 @@ __lzEncode_cleanup_step2_scan_finish:
 
 #ifdef LZ_CHECK
             if ((uptr)dst >= dcnt) {
-                log_error("lzEncode : out of dst when writing flag.\n\n");
+                lz_error("lzEncode : out of dst when writing flag.\n\n");
                 return dst;
             }
 #endif // LZ_CHECK
@@ -892,7 +888,7 @@ __lzEncode_cleanup_step3:
     // 判斷需不需要寫回 ref_flag
     if (dst != ref_flag_pos) {
         *ref_flag_pos = ref_flag >> (0x37 - clz(ref_flag));
-        log_debug("cleanup step 3 : 0x%llX, 0x%llX, 0x%llX\n", ref_flag_pos, dst, ref_flag);
+        lz_debug("cleanup step 3 : 0x%llX, 0x%llX, 0x%llX\n", ref_flag_pos, dst, ref_flag);
     }
     else {
         dst--;
@@ -918,7 +914,7 @@ int main(sptr argc, u8 **argv) {
 
     switch (argv[0x1][0x0]) {
         case 0x44:
-		case 0x64:
+        case 0x64:
         // 解壓測試
         {
             FILE *fp;
@@ -985,13 +981,13 @@ int main(sptr argc, u8 **argv) {
 
             csize = (uptr)lzEncode(&cdata[0x8], ddata, 0x100000, dsize);
             csize -= (uptr)cdata;
-            log_debug("Encode success : 0x%llX\n", csize);
+            lz_debug("Encode success : 0x%llX\n", csize);
 
             fp = fopen(argv[0x3], "wb");
             *(u32*)cdata = bswap32(dsize);
             fwrite(cdata, csize, 0x1, fp);
             fclose(fp);
-            log_debug("Write success.\n");
+            lz_debug("Write success.\n");
 
             free(ddata - lz_win_size);
         }

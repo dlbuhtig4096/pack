@@ -3,6 +3,10 @@
 #define LZ_MODULE
 #include <lz.c>
 
+// 加入 yay0 library
+#define YAY0_MODULE
+#include <yay0.c>
+
 sptr main(sptr argc, u8 **argv) {
     u8 rom[BAKU_ROM_SIZE];
     u8 buf[BAKU_BUF_SIZE];
@@ -22,7 +26,7 @@ sptr main(sptr argc, u8 **argv) {
     // -------------------------------------------------------------------------------- unpack --------------------------------------------------------------------------------
     switch (argv[0x1][0x0]) {
         case 0x44:
-		case 0x64:
+        case 0x64:
         {
             baku_info *pc, *pd;
             u8 path[0x100];
@@ -220,7 +224,6 @@ sptr main(sptr argc, u8 **argv) {
                             // 根據類別讀取並輸出檔案
                             switch (pc->arc.type) {
                             case BAKU_FS_RAW:
-                            case BAKU_FS_YAY:
 
                                 // 直接寫入到輸出檔案
                                 baku_log_debug("file = %s, d = %X\n", path, strn);
@@ -268,6 +271,28 @@ sptr main(sptr argc, u8 **argv) {
 
                                     // 寫入結果到輸出檔案
                                     fwrite(&strm[0x4], 0x4, 0x1, fp);
+                                    fwrite(out, dsize, 0x1, fp);
+                                }
+                                break;
+                                
+                            case BAKU_FS_YAY:
+                                {
+                                    uptr dsize;
+
+                                    // 壓縮檔格式 : | 解壓大小 (4) | 壓縮資料 (*) |
+                                    dsize = (strm[0x0] << 0x18) | (strm[0x1] << 0x10) | (strm[0x2] << 0x08) | (strm[0x3] << 0x00);
+                                    
+                                    // 壓縮的檔案至少要有 4 byte
+                                    baku_log_debug("file = %s, c = %X, d = %X\n", path, strn, dsize);
+                                    if (strn <= 0x4) {
+                                        baku_log_error("unpack : invaild lz archive %s\n", path);
+                                        break;
+                                    }
+
+                                    // 解壓縮
+                                    yay0Decode(out, &strm[0x4], dsize, strn - 0x4);
+
+                                    // 寫入結果到輸出檔案
                                     fwrite(out, dsize, 0x1, fp);
                                 }
                                 break;
@@ -443,7 +468,6 @@ sptr main(sptr argc, u8 **argv) {
                             // 根據類別讀取並輸出檔案
                             switch (pc->arc.type) {
                             case BAKU_FS_RAW:
-                            case BAKU_FS_YAY:
 
                                 // 直接寫入到輸出檔案
                                 strn = fread(strm, 0x1, (uptr)&rom[BAKU_ROM_SIZE] - (uptr)strm, fp);
@@ -482,6 +506,25 @@ sptr main(sptr argc, u8 **argv) {
                                     baku_log_debug("file = %s, c = %X, d = %X\n", path, strn, dsize);
 
                                     // 壓縮檔格式 : | 解壓大小 (4) | BSS 大小 (4) | 壓縮資料 (*) |
+                                    strm[0x0] = (u8)(dsize >> 0x18);
+                                    strm[0x1] = (u8)(dsize >> 0x10);
+                                    strm[0x2] = (u8)(dsize >> 0x08);
+                                    strm[0x3] = (u8)(dsize >> 0x00);
+                                }
+                                break;
+                                
+                            case BAKU_FS_YAY:
+                                {
+                                    uptr dsize;
+
+                                    // 從輸入檔案讀取
+                                    dsize = fread(&out[lz_win_size], 0x1, BAKU_ROM_SIZE, fp);
+
+                                    // 壓縮 & 大小加上檔頭 4 byte
+                                    strn = (uptr)yay0Encode(&strm[0x4], &out[lz_win_size], (uptr)&rom[BAKU_ROM_SIZE] - (uptr)strm, dsize) - (uptr)strm;
+                                    baku_log_debug("file = %s, c = %X, d = %X\n", path, strn, dsize);
+
+                                    // 壓縮檔格式 : | 解壓大小 (4) | 壓縮資料 (*) |
                                     strm[0x0] = (u8)(dsize >> 0x18);
                                     strm[0x1] = (u8)(dsize >> 0x10);
                                     strm[0x2] = (u8)(dsize >> 0x08);

@@ -29,4 +29,11 @@ typedef union any {
     f64 f64;
 } any;
 
+#define bswap16 __builtin_bswap16
+#define bswap32 __builtin_bswap32
+#define bswap64 __builtin_bswap64
+#define clz32   __builtin_clz
+#define clz64   __builtin_clzll
+#define clz  __builtin_clzll
+
 #endif
