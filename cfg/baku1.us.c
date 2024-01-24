@@ -2,7 +2,7 @@
 #include <baku.h>
 
 pack info = {
-    .id = "NUS-NBMJ",
+    .id = "NUS-NBME",
     .rom = 0x00800000,
     .eof = 0x0,
     .fs = {
@@ -146,7 +146,7 @@ pack info = {
             FS_LZX("8.bin"),
             FS_LZX("9.bin"),
 
-        FAT(0x00300000, 0x365, "assets/"), // 0x00500000
+        FAT(0x00300000, 0x368, "assets/"), // 0x00500000
             FS_LZX("000.bin"), // Bomb?
             FS_LZX("001.bin"), // Bomb?
             FS_LZX("002.bin"), // Red Bomb?
@@ -1017,8 +1017,8 @@ pack info = {
             FS_LZX("363.bin"), // (TXT) Sirius dialogue about dust
             FS_LZX("364.bin"), // (TXT) Sirius tutorial lift and throw
             FS_LZX("365.bin"), // Intro Grid Floor? 16 x 16
-            // FS_LZX("366.bin"), // Opening splash screen black
-            // FS_LZX("367.bin"), // 64 (title screen) (0x28, 0x16D8)
-            // FS_LZX("368.bin"), //
+            FS_LZX("366.bin"), // Opening splash screen black
+            FS_LZX("367.bin"), // 64 (title screen) (0x28, 0x16D8)
+            FS_LZX("368.bin"), //
     }
 };
