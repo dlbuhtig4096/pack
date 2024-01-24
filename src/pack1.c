@@ -22,6 +22,12 @@ pack1.c
 #define BAKU_PACK_FAT_SIZE             0x00000400
 #define BAKU_PACK_FAT_SIZE_NUS         0x00040000
 
+// 功能
+
+#define PACK_LZX
+// #define PACK_LZY
+// #define PACK_YAY
+
 #include <pack.h>
 
 /*

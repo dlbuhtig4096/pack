@@ -17,10 +17,16 @@ pack2.c
 
 // 組合參數
 
-#define BAKU_PACK_FAT_BASE              0x00008008
-#define BAKU_PACK_FAT_BASE_NUS          0x08800000
+#define BAKU_PACK_FAT_BASE             0x00008008
+#define BAKU_PACK_FAT_BASE_NUS         0x08800000
 #define BAKU_PACK_FAT_SIZE             0x00001000
 #define BAKU_PACK_FAT_SIZE_NUS         0x00100000
+
+// 功能
+
+#define PACK_LZX
+#define PACK_LZY
+#define PACK_YAY
 
 #include <pack.h>
 

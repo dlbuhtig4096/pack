@@ -1,11 +1,15 @@
 
 // 加入 lz library
+#if defined(PACK_LZX) || defined(PACK_LZY)
 #define LZ_MODULE
 #include <lz.c>
+#endif
 
 // 加入 yay0 library
+#if defined(PACK_YAY)
 #define YAY0_MODULE
 #include <yay0.c>
+#endif
 
 sptr main(sptr argc, u8 **argv) {
     u8 rom[BAKU_ROM_SIZE];
@@ -16,6 +20,12 @@ sptr main(sptr argc, u8 **argv) {
         printf("main : Usage %s [d|e] [src] [dst].\n", argv[0x0]);
         return 0x1;
     }
+
+    out = &rom[0x0];
+    do {
+        *out = 0x0;
+        out++;
+    } while (out < &rom[BAKU_ROM_SIZE]);
 
     out = buf;
     do {
@@ -224,12 +234,21 @@ sptr main(sptr argc, u8 **argv) {
                             // 根據類別讀取並輸出檔案
                             switch (pc->arc.type) {
                             case BAKU_FS_RAW:
-
+#ifndef PACK_LZX
+                            case BAKU_FS_LZX:
+#endif
+#ifndef PACK_LZY
+                            case BAKU_FS_LZY:
+#endif
+#ifndef PACK_YAY
+                            case BAKU_FS_YAY:
+#endif
                                 // 直接寫入到輸出檔案
                                 baku_log_debug("file = %s, d = %X\n", path, strn);
                                 fwrite(strm, strn, 0x1, fp);
                                 break;
 
+#ifdef PACK_LZX
                             case BAKU_FS_LZX:
                                 {
                                     uptr dsize;
@@ -251,7 +270,8 @@ sptr main(sptr argc, u8 **argv) {
                                     fwrite(out, dsize, 0x1, fp);
                                 }
                                 break;
-
+#endif // PACK_LZX
+#ifdef PACK_LZY
                             case BAKU_FS_LZY:
                                 {
                                     uptr dsize;
@@ -274,7 +294,8 @@ sptr main(sptr argc, u8 **argv) {
                                     fwrite(out, dsize, 0x1, fp);
                                 }
                                 break;
-                                
+#endif // PACK_LZY                     
+#ifdef PACK_YAY      
                             case BAKU_FS_YAY:
                                 {
                                     uptr dsize;
@@ -296,8 +317,8 @@ sptr main(sptr argc, u8 **argv) {
                                     fwrite(out, dsize, 0x1, fp);
                                 }
                                 break;
+#endif // PACK_YAY
                             }
-
                             // 關閉輸出檔案
                             fclose(fp);
 
@@ -468,12 +489,20 @@ sptr main(sptr argc, u8 **argv) {
                             // 根據類別讀取並輸出檔案
                             switch (pc->arc.type) {
                             case BAKU_FS_RAW:
-
+#ifndef PACK_LZX
+                            case BAKU_FS_LZX:
+#endif // PACK_LZX
+#ifndef PACK_LZY
+                            case BAKU_FS_LZY:
+#endif // PACK_LZY
+#ifndef PACK_YAY
+                            case BAKU_FS_YAY:
+#endif // PACK_YAY
                                 // 直接寫入到輸出檔案
                                 strn = fread(strm, 0x1, (uptr)&rom[BAKU_ROM_SIZE] - (uptr)strm, fp);
                                 baku_log_debug("file = %s, d = %X\n", path, strn);
                                 break;
-
+#ifdef PACK_LZX
                             case BAKU_FS_LZX:
                                 {
                                     uptr dsize;
@@ -492,7 +521,8 @@ sptr main(sptr argc, u8 **argv) {
                                     strm[0x3] = (u8)(dsize >> 0x00);
                                 }
                                 break;
-
+#endif // PACK_LZX
+#ifdef PACK_LZY
                             case BAKU_FS_LZY:
                                 {
                                     uptr dsize;
@@ -512,7 +542,8 @@ sptr main(sptr argc, u8 **argv) {
                                     strm[0x3] = (u8)(dsize >> 0x00);
                                 }
                                 break;
-                                
+#endif // PACK_LZY
+#ifdef PACK_YAY
                             case BAKU_FS_YAY:
                                 {
                                     uptr dsize;
@@ -531,6 +562,7 @@ sptr main(sptr argc, u8 **argv) {
                                     strm[0x3] = (u8)(dsize >> 0x00);
                                 }
                                 break;
+#endif // PACK_YAY
                             }
 
                             // 關閉輸入檔案
