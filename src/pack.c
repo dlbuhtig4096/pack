@@ -1,3 +1,38 @@
+/*
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+pack.c
+用於 Baku Bomberman 系列中檔案系統的工具組
+
+*/
+
+// 選項
+
+#define BAKU_DEBUG
+#define BAKU_ERROR
+
+// 緩存參數
+
+#define BAKU_ROM_SIZE      0x01000000
+#define BAKU_BUF_SIZE      0x00100000
+#define BAKU_CFG_SIZE      0x00100000
+
+// 組合參數
+
+#define BAKU_PACK_FAT_BASE             0x00008008
+#define BAKU_PACK_FAT_BASE_NUS         0x08800000
+#define BAKU_PACK_FAT_SIZE             0x00001000
+#define BAKU_PACK_FAT_SIZE_NUS         0x00100000
+
+// 功能
+
+#define PACK_LZX
+#define PACK_LZY
+#define PACK_YAY
+
+/*
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+*/
+#include <pack.h>
 
 // 加入 lz library
 #if defined(PACK_LZX) || defined(PACK_LZY)
@@ -11,34 +46,48 @@
 #include <yay0.c>
 #endif
 
+/*
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+*/
 sptr main(sptr argc, u8 **argv) {
-    u8 rom[BAKU_ROM_SIZE];
-    u8 buf[BAKU_BUF_SIZE];
+    u8 rom[BAKU_ROM_SIZE], buf[BAKU_BUF_SIZE];
     u8 *out;
+    union {
+        u8 raw[BAKU_CFG_SIZE];
+        pack info;
+    } cfg;
 
-    if (argc != 0x4) {
-        printf("main : Usage %s [d|e] [src] [dst].\n", argv[0x0]);
+    if (argc != 0x5) {
+        printf("main : Usage %s [d|e] [cfg] [src] [dst].\n", argv[0x0]);
         return 0x1;
     }
 
-    out = &rom[0x0];
-    do {
-        *out = 0x0;
-        out++;
-    } while (out < &rom[BAKU_ROM_SIZE]);
+    // 讀取 cfg
+    {
+        FILE *fp;
 
-    out = buf;
-    do {
-        *out = 0x0;
-        out++;
-    } while (out < &buf[lz_win_size]);
+        fp = fopen(argv[0x2], "rb");
+        if (!fp) {
+            baku_log_error("unpack : cannot open %s for reading\n", argv[0x2]);
+            return 0x1;
+        }
+        fread(&cfg.raw[0x0], BAKU_CFG_SIZE, 0x1, fp);
+        cfg.info.eof = ftell(fp);
+        fclose(fp);
+    }
+
+    out = &rom[cfg.info.rom];
+    while (out > &rom[0x0]) { *--out = 0x0; };
+
+    out = &buf[lz_win_size];
+    do { *--out = 0x0; } while (out < &buf[0x0]);
 
     // -------------------------------------------------------------------------------- unpack --------------------------------------------------------------------------------
     switch (argv[0x1][0x0]) {
         case 0x44:
         case 0x64:
         {
-            baku_info *pc, *pd;
+            pack_info *pc, *pd;
             u8 path[0x100];
             u8 *path_arg;
 
@@ -46,9 +95,9 @@ sptr main(sptr argc, u8 **argv) {
             {
                 FILE *fp;
 
-                fp = fopen(argv[0x2], "rb");
+                fp = fopen(argv[0x3], "rb");
                 if (!fp) {
-                    baku_log_error("unpack : cannot open %s for reading\n", argv[0x2]);
+                    baku_log_error("unpack : cannot open %s for reading\n", argv[0x3]);
                     return 0x1;
                 }
                 fread(rom, BAKU_ROM_SIZE, 0x1, fp);
@@ -61,7 +110,7 @@ sptr main(sptr argc, u8 **argv) {
                 u8 *p;
                 u8 c;
 
-                p = argv[0x3];
+                p = argv[0x4];
                 do {
                     path_arg++;
                     c = *p;
@@ -84,8 +133,8 @@ sptr main(sptr argc, u8 **argv) {
             }
 
             // 根據資訊解包檔案
-            pc = &baku_fat_info[0x0];
-            pd = (baku_info*)(((uptr)baku_fat_info) + sizeof(baku_fat_info));
+            pc = cfg.info.fs;
+            pd = (pack_info*)(((uptr)&cfg.raw[0x0]) + cfg.info.eof);
             while (pc < pd) {
                 switch (pc->raw.type) {
                 
@@ -101,7 +150,7 @@ sptr main(sptr argc, u8 **argv) {
 
                             p0 = pc->raw.name;
                             p1 = path_arg;
-                            p2 = &p0[baku_info_raw_name_size];
+                            p2 = &p0[pack_info_raw_name_size];
                             do {
                                 c = *p0;
                                 *p1 = c;
@@ -201,7 +250,7 @@ sptr main(sptr argc, u8 **argv) {
 
                                 p0 = pc->arc.name;
                                 p1 = path_fat;
-                                p2 = &p0[baku_info_arc_name_size];
+                                p2 = &p0[pack_info_arc_name_size];
                                 do {
                                     c = *p0;
 
@@ -223,7 +272,7 @@ sptr main(sptr argc, u8 **argv) {
                             fp = fopen(path, "wb");
                             if (!fp) {
                                 baku_log_error("unpack : cannot open %s for writing\n", path);
-                                pc++;
+                                pc++; num--;
                                 continue;
                             }
 
@@ -336,7 +385,7 @@ sptr main(sptr argc, u8 **argv) {
     case 0x45:
     case 0x65:
         {
-            baku_info *pc, *pd;
+            pack_info *pc, *pd;
             u8 path[0x100];
             u8 *path_arg;
 
@@ -346,7 +395,7 @@ sptr main(sptr argc, u8 **argv) {
                 u8 *p;
                 u8 c;
 
-                p = argv[0x3];
+                p = argv[0x4];
                 do {
                     path_arg++;
                     c = *p;
@@ -369,8 +418,8 @@ sptr main(sptr argc, u8 **argv) {
             }
 
             // 根據資訊組合檔案
-            pc = &baku_fat_info[0x0];
-            pd = (baku_info*)(((uptr)baku_fat_info) + sizeof(baku_fat_info));
+            pc = cfg.info.fs;
+            pd = (pack_info*)(((uptr)&cfg.raw[0x0]) + cfg.info.eof);
             while (pc < pd) {
                 switch (pc->raw.type) {
                 
@@ -386,7 +435,7 @@ sptr main(sptr argc, u8 **argv) {
 
                             p0 = pc->raw.name;
                             p1 = path_arg;
-                            p2 = &p0[baku_info_raw_name_size];
+                            p2 = &p0[pack_info_raw_name_size];
                             do {
                                 c = *p0;
                                 *p1 = c;
@@ -468,7 +517,7 @@ sptr main(sptr argc, u8 **argv) {
 
                                 p0 = pc->arc.name;
                                 p1 = path_fat;
-                                p2 = &p0[baku_info_arc_name_size];
+                                p2 = &p0[pack_info_arc_name_size];
                                 do {
                                     c = *p0;
                                     *p1 = c;
@@ -591,12 +640,12 @@ sptr main(sptr argc, u8 **argv) {
             {
                 FILE *fp;
 
-                fp = fopen(argv[0x2], "wb");
+                fp = fopen(argv[0x3], "wb");
                 if (!fp) {
-                    baku_log_error("repack : cannot open %s for writing\n", argv[0x2]);
+                    baku_log_error("repack : cannot open %s for writing\n", argv[0x3]);
                     return 0x1;
                 }
-                fwrite(rom, BAKU_ROM_SIZE, 0x1, fp);
+                fwrite(rom, cfg.info.rom, 0x1, fp);
                 fclose(fp);
             }
         }
