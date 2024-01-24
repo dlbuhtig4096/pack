@@ -545,8 +545,16 @@ baku_info baku_fat_info[] = {
         FS_YAY("1b0.bin"), // Drops down on back.
         FS_YAY("1b1.bin"), // Flips backwards, flops facedown.
         FS_YAY("1b2.bin"), // Arms and legs flail.
+#if defined(BAKU2_JP)
         FS_YAY("1b3.bin"), // "Exit World" text.*
         FS_YAY("1b4.bin"), // "Continue Game" text.*
+#elif defined(BAKU2_US)
+        FS_LZX("1b3.bin"), // "Exit World" text.*
+        FS_LZX("1b4.bin"), // "Continue Game" text.*
+#else
+        FS_YAY("1b3.bin"), // "Exit World" text.*
+        FS_YAY("1b4.bin"), // "Continue Game" text.*
+#endif
         FS_YAY("1b5.bin"), // [A tiny block?]
         FS_YAY("1b6.bin"), // [A tiny block?]
         FS_YAY("1b7.bin"), // [A tiny block?]
@@ -3243,7 +3251,9 @@ baku_info baku_fat_info[] = {
         FS_LZX("c3a.bin"), // Model shading type 72.
         FS_LZX("c3b.bin"), // Model shading type 73. (Unused.)
         FS_LZX("c3c.bin"), // Model shading type 74. (Unused.)
-        // FS_RAW("c3d.bin"), // US-only. Vatical Entertainment publisher display.
+#ifdef BAKU2_US
+        FS_RAW("c3d.bin"), // US-only. Vatical Entertainment publisher display.
+#endif // BAKU2_US
 };
 
 #undef RAW
