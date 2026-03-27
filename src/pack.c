@@ -9,6 +9,7 @@ pack.c
 
 #define BAKU_DEBUG
 #define BAKU_ERROR
+// #define BAKU_STACK
 
 // 緩存參數
 
@@ -46,11 +47,18 @@ pack.c
 #include <yay0.c>
 #endif
 
+#ifndef BAKU_STACK
+u8 rom[BAKU_ROM_SIZE], buf[BAKU_BUF_SIZE];
+#endif
+
 /*
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 */
 sptr main(sptr argc, u8 **argv) {
+#ifdef BAKU_STACK
     u8 rom[BAKU_ROM_SIZE], buf[BAKU_BUF_SIZE];
+#endif
+
     u8 *out;
     union {
         u8 raw[BAKU_CFG_SIZE];
