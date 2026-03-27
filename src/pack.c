@@ -289,7 +289,6 @@ sptr main(sptr argc, u8 **argv) {
                             fp = fopen(path, "wb");
                             if (!fp) {
                                 baku_log_error("unpack: cannot open %s for writing\n", path);
-                                pc++; num--;
                                 continue;
                             }
 
