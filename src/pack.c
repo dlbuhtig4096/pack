@@ -49,6 +49,10 @@ pack.c
 
 #ifndef BAKU_STACK
 u8 rom[BAKU_ROM_SIZE], buf[BAKU_BUF_SIZE];
+union {
+    u8 raw[BAKU_CFG_SIZE];
+    pack info;
+} cfg;
 #endif
 
 /*
@@ -57,13 +61,13 @@ u8 rom[BAKU_ROM_SIZE], buf[BAKU_BUF_SIZE];
 sptr main(sptr argc, u8 **argv) {
 #ifdef BAKU_STACK
     u8 rom[BAKU_ROM_SIZE], buf[BAKU_BUF_SIZE];
-#endif
-
-    u8 *out;
     union {
         u8 raw[BAKU_CFG_SIZE];
         pack info;
     } cfg;
+#endif
+
+    u8 *out;
 
     if (argc != 0x5) {
         printf("main : Usage %s [d|e] [cfg] [src] [dst].\n", argv[0x0]);
@@ -269,7 +273,7 @@ sptr main(sptr argc, u8 **argv) {
                                     }
 
                                     *p1 = c;
-                                    
+
                                     // \0 表示檔名到此結束
                                     if (!c) { break; }
 
