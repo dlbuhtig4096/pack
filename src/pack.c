@@ -161,15 +161,16 @@ sptr main(sptr argc, u8 **argv) {
                             p2 = &p0[pack_info_raw_name_size];
                             do {
                                 c = *p0;
+
+                                // 如果遇到資料夾就嘗試建立它 失敗也無所謂
+                                if (c == '/' || c == '\\') {
+                                    *p1 = 0x0; mkdir(path, 0666);
+                                }
+                                
                                 *p1 = c;
 
                                 // \0 表示檔名到此結束
                                 if (!c) { break; }
-
-                                // 如果遇到資料夾就嘗試建立它 失敗也無所謂
-                                if (c == '/' || c == '\\') {
-                                    *path_arg = 0x0; mkdir(path, 0666);
-                                }
 
                                 p0++;
                                 p1++;
@@ -268,6 +269,7 @@ sptr main(sptr argc, u8 **argv) {
                                     }
 
                                     *p1 = c;
+                                    
                                     // \0 表示檔名到此結束
                                     if (!c) { break; }
 
