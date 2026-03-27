@@ -20,6 +20,6 @@ $(BIN)/%.bin: $(BIN)/%.o
 	$(CP) -j .data -O binary $< $@
 
 $(BIN)/%$(ELF): $(SRC)/%.c $(INC)/pack.h $(INC)/env.h
-	$(CC) -s -m64 -O3 -fno-stack-protector -fno-exceptions -fno-stack-check -fomit-frame-pointer -ffunction-sections -Wl,--gc-sections -I $(INC) -I $(SRC) $< -Wl,-Map,$(subst $(ELF),.map,$@) -o $@
+	$(CC) -s -m64 -O3 -fno-stack-protector -fno-exceptions -fno-stack-check -fomit-frame-pointer -ffunction-sections $(__CC__) -Wl,--gc-sections -I $(INC) -I $(SRC) $< -Wl,-Map,$(subst $(ELF),.map,$@) -o $@
 
 all: $(BIN)/ $(BIN)/pack$(ELF) $(BIN)/baku1.jp.bin $(BIN)/baku1.us.bin  $(BIN)/baku2.jp.bin $(BIN)/baku2.us.bin

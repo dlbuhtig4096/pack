@@ -80,7 +80,7 @@ sptr main(sptr argc, u8 **argv) {
 
         fp = fopen(argv[0x2], "rb");
         if (!fp) {
-            baku_log_error("unpack : cannot open %s for reading\n", argv[0x2]);
+            baku_log_error("unpack: cannot open %s for reading\n", argv[0x2]);
             return 0x1;
         }
         fread(&cfg.raw[0x0], BAKU_CFG_SIZE, 0x1, fp);
@@ -109,7 +109,7 @@ sptr main(sptr argc, u8 **argv) {
 
                 fp = fopen(argv[0x3], "rb");
                 if (!fp) {
-                    baku_log_error("unpack : cannot open %s for reading\n", argv[0x3]);
+                    baku_log_error("unpack: cannot open %s for reading\n", argv[0x3]);
                     return 0x1;
                 }
                 fread(rom, BAKU_ROM_SIZE, 0x1, fp);
@@ -129,7 +129,7 @@ sptr main(sptr argc, u8 **argv) {
 
                     // 如果遇到資料夾就嘗試建立它 失敗也無所謂
                     if (c == '/' || c == '\\') {
-                        *path_arg = 0x0; mkdir(path, 0666);
+                        *path_arg = 0x0; mkdir(path, 0777);
                     }
 
                     *path_arg = c;
@@ -137,10 +137,13 @@ sptr main(sptr argc, u8 **argv) {
                 } while (c);
 
                 // 如果最後一個字元不是資料夾 加上一個斜線
-                c = path_arg[-0x1];
-                if (c != '/' && c != '\\') {
-                    *path_arg = '/';
-                    path_arg++;
+                if (path_arg > path) {
+                    c = path_arg[-0x1];
+                    if (c != '/' && c != '\\') {
+                        *path_arg++ = '/'; 
+                        *path_arg = 0x0;
+                        mkdir(path, 0777);
+                    }
                 }
             }
 
@@ -168,7 +171,7 @@ sptr main(sptr argc, u8 **argv) {
 
                                 // 如果遇到資料夾就嘗試建立它 失敗也無所謂
                                 if (c == '/' || c == '\\') {
-                                    *p1 = 0x0; mkdir(path, 0666);
+                                    *p1 = 0x0; mkdir(path, 0777);
                                 }
                                 
                                 *p1 = c;
@@ -184,7 +187,7 @@ sptr main(sptr argc, u8 **argv) {
                         // 嘗試開啟輸出檔案
                         fp = fopen(path, "wb");
                         if (!fp) {
-                            baku_log_error("unpack : cannot open %s for writing\n", path);
+                            baku_log_error("unpack: cannot open %s for writing\n", path);
                             pc++;
                             break;
                         }
@@ -241,7 +244,7 @@ sptr main(sptr argc, u8 **argv) {
 
                                 // 如果遇到資料夾就嘗試建立它 失敗也無所謂
                                 if (c == '/' || c == '\\') {
-                                    *path_fat = 0x0; mkdir(path, 0666);
+                                    *path_fat = 0x0; mkdir(path, 0777);
                                 }
 
                                 p++;
@@ -269,7 +272,7 @@ sptr main(sptr argc, u8 **argv) {
 
                                     // 如果遇到資料夾就嘗試建立它 失敗也無所謂
                                     if (c == '/' || c == '\\') {
-                                        *p1 = 0x0; mkdir(path, 0666);
+                                        *p1 = 0x0; mkdir(path, 0777);
                                     }
 
                                     *p1 = c;
@@ -285,7 +288,7 @@ sptr main(sptr argc, u8 **argv) {
                             // 嘗試開啟輸出檔案
                             fp = fopen(path, "wb");
                             if (!fp) {
-                                baku_log_error("unpack : cannot open %s for writing\n", path);
+                                baku_log_error("unpack: cannot open %s for writing\n", path);
                                 pc++; num--;
                                 continue;
                             }
@@ -322,7 +325,7 @@ sptr main(sptr argc, u8 **argv) {
                                     // 壓縮的檔案至少要有 4 byte
                                     baku_log_debug("file = %s, c = %X, d = %X\n", path, strn, dsize);
                                     if (strn <= 0x4) {
-                                        baku_log_error("unpack : invaild lz archive %s\n", path);
+                                        baku_log_error("unpack: invaild lz archive %s\n", path);
                                         break;
                                     }
 
@@ -345,7 +348,7 @@ sptr main(sptr argc, u8 **argv) {
                                     // 壓縮的檔案至少要有 8 byte
                                     baku_log_debug("file = %s, c = %X, d = %X\n", path, strn, dsize);
                                     if (strn <= 0x8) {
-                                        baku_log_error("unpack : invaild lz archive %s\n", path);
+                                        baku_log_error("unpack: invaild lz archive %s\n", path);
                                         break;
                                     }
 
@@ -369,7 +372,7 @@ sptr main(sptr argc, u8 **argv) {
                                     // 壓縮的檔案至少要有 4 byte
                                     baku_log_debug("file = %s, c = %X, d = %X\n", path, strn, dsize);
                                     if (strn <= 0x4) {
-                                        baku_log_error("unpack : invaild lz archive %s\n", path);
+                                        baku_log_error("unpack: invaild lz archive %s\n", path);
                                         break;
                                     }
 
@@ -416,7 +419,7 @@ sptr main(sptr argc, u8 **argv) {
                     
                     // 如果遇到資料夾就嘗試建立它 失敗也無所謂
                     if (c == '/' || c == '\\') {
-                        *path_arg = 0x0; mkdir(path, 0666);
+                        *path_arg = 0x0; mkdir(path, 0777);
                     }
 
                     *path_arg = c;
@@ -462,7 +465,7 @@ sptr main(sptr argc, u8 **argv) {
                         // 嘗試開啟輸出檔案
                         fp = fopen(path, "rb");
                         if (!fp) {
-                            baku_log_error("repack : cannot open %s for reading\n", path);
+                            baku_log_error("repack: cannot open %s for reading\n", path);
                             pc++;
                             break;
                         }
@@ -544,7 +547,7 @@ sptr main(sptr argc, u8 **argv) {
                             // 嘗試開啟輸入檔案
                             fp = fopen(path, "rb");
                             if (!fp) {
-                                baku_log_error("repack : cannot open %s for reading\n", path);
+                                baku_log_error("repack: cannot open %s for reading\n", path);
                                 pc++;
                                 continue;
                             }
@@ -656,7 +659,7 @@ sptr main(sptr argc, u8 **argv) {
 
                 fp = fopen(argv[0x3], "wb");
                 if (!fp) {
-                    baku_log_error("repack : cannot open %s for writing\n", argv[0x3]);
+                    baku_log_error("repack: cannot open %s for writing\n", argv[0x3]);
                     return 0x1;
                 }
                 fwrite(rom, cfg.info.rom, 0x1, fp);
