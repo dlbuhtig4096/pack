@@ -1,5 +1,6 @@
 
 #ifndef __PACK__
+#define __PACK__
 #include <env.h>
 
 // 型態
@@ -90,5 +91,9 @@ typedef struct baku_fat baku_fat;
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
+
+#ifdef __MINGW32__
+#define mkdir(path, mode) mkdir(path)
+#endif
 
 #endif

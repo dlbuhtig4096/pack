@@ -117,7 +117,7 @@ sptr main(sptr argc, u8 **argv) {
 
                     // 如果遇到資料夾就嘗試建立它 失敗也無所謂
                     if (c == '/' || c == '\\') {
-                        *path_arg = 0x0; mkdir(path);
+                        *path_arg = 0x0; mkdir(path, 0666);
                     }
 
                     *path_arg = c;
@@ -160,7 +160,7 @@ sptr main(sptr argc, u8 **argv) {
 
                                 // 如果遇到資料夾就嘗試建立它 失敗也無所謂
                                 if (c == '/' || c == '\\') {
-                                    *path_arg = 0x0; mkdir(path);
+                                    *path_arg = 0x0; mkdir(path, 0666);
                                 }
 
                                 p0++;
@@ -228,7 +228,7 @@ sptr main(sptr argc, u8 **argv) {
 
                                 // 如果遇到資料夾就嘗試建立它 失敗也無所謂
                                 if (c == '/' || c == '\\') {
-                                    *path_fat = 0x0; mkdir(path);
+                                    *path_fat = 0x0; mkdir(path, 0666);
                                 }
 
                                 p++;
@@ -256,7 +256,7 @@ sptr main(sptr argc, u8 **argv) {
 
                                     // 如果遇到資料夾就嘗試建立它 失敗也無所謂
                                     if (c == '/' || c == '\\') {
-                                        *p1 = 0x0; mkdir(path);
+                                        *p1 = 0x0; mkdir(path, 0666);
                                     }
 
                                     *p1 = c;
@@ -402,7 +402,7 @@ sptr main(sptr argc, u8 **argv) {
                     
                     // 如果遇到資料夾就嘗試建立它 失敗也無所謂
                     if (c == '/' || c == '\\') {
-                        *path_arg = 0x0; mkdir(path);
+                        *path_arg = 0x0; mkdir(path, 0666);
                     }
 
                     *path_arg = c;
