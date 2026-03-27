@@ -17,7 +17,7 @@ $(BIN)/%.o: $(CFG)/%.c $(CFG)/baku.h $(INC)/pack.h $(INC)/env.h
 	$(CC) -c -I $(CFG) -fno-ident -I $(INC) $< -o $@
 
 $(BIN)/%.bin: $(BIN)/%.o
-	$(CP) -O binary $< $@
+	$(CP) -j .data -O binary $< $@
 
 $(BIN)/%$(ELF): $(SRC)/%.c $(INC)/pack.h $(INC)/env.h
 	$(CC) -s -m64 -O3 -fno-stack-protector -fno-exceptions -fno-stack-check -fomit-frame-pointer -ffunction-sections -Wl,--gc-sections -I $(INC) -I $(SRC) $< -Wl,-Map,$(subst $(ELF),.map,$@) -o $@
