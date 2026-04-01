@@ -7,7 +7,8 @@ pack info = {
     .eof = 0x0,
     .fs = {
         RAW(0x00000000, 0x00001000, "boot.bin"),
-        RAW(0x00001000, 0x000FF000, "app.bin"),
+        RAW(0x00001000, 0x000FE000, "app.bin"),
+        RAW(0x000FF000, 0x00001000, "evinfo.bin"),
 
         FAT(0x00100000, 0x1, "actor/"), // 0x00020000
             FS_RAW("info"),
